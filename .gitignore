@@ -206,6 +206,6 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-datasets/
+#datasets/
 # Jupyter notebooks
 notebooks/.ipynb_checkpoints/
