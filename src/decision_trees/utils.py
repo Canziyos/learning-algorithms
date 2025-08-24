@@ -47,20 +47,33 @@ def split_dataset(features, labels, feature_name, threshold):
 
     return (left_features, left_labels), (right_features, right_labels)
 
-
 def best_split(feature, labels):
-    best_gain, best_thre = -1, None
-    for thre in set(feature):
-        gain = split_gain(feature, labels, thre)
-        if gain > best_gain:
-            best_gain, best_thre = gain, thre
-    return best_gain, best_thre
+    best_gain, best_threshold = 0, None
+    sorted_vals = sorted(set(feature))
 
+    # no possible split if all feature values identical.
+    if len(sorted_vals) < 2:
+        return 0, None
+
+    for i in range(len(sorted_vals) - 1):
+        threshold = (sorted_vals[i] + sorted_vals[i+1]) / 2
+        gain = split_gain(feature, labels, threshold)
+        if gain > best_gain:
+            best_gain, best_threshold = gain, threshold
+
+    return best_gain, best_threshold
 
 def best_feature_split(features, labels):
-    best_gain, best_feature, best_thresh = -1, None, None
+    best_gain, best_feature, best_thresh = 0, None, None
+
     for feat_name, feat_values in features.items():
         gain, thresh = best_split(feat_values, labels)
+
+        # skip features that can't split.
+        if thresh is None:
+            continue
+
         if gain > best_gain:
             best_gain, best_feature, best_thresh = gain, feat_name, thresh
+
     return best_feature, best_thresh, best_gain

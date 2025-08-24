@@ -1,6 +1,6 @@
 from collections import Counter
-from .node import Node
-from .utils import split_dataset, best_feature_split
+from node import Node
+from utils import split_dataset, best_feature_split, best_split
 
 
 def build_tree(features, labels, depth=0, max_depth=None,
@@ -54,6 +54,6 @@ def predict_many(tree, samples):
 
 def accuracy(y_true, y_pred):
     if len(y_true) == 0 or len(y_pred) == 0 or len(y_true) != len(y_pred):
-        raise ValueError("you fucked up")
+        raise ValueError("Inputs invalid. (you messed up)")
     correct = sum(1 for t, p in zip(y_true, y_pred) if t == p)
     return correct / len(y_true)
