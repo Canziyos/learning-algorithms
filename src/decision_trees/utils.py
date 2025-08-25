@@ -1,6 +1,27 @@
 import pandas as pd
 from collections import Counter
 
+
+#------------------
+# Data loader.
+#------------------
+def load_dataset(path, label=None):
+    data = pd.read_csv(path)
+    # Trim accidental whitespace in headers.
+    data.columns = [str(c).strip() for c in data.columns]
+    # Auto-pick the last column as label if not provided.
+    if label is None:
+        label = data.columns[-1]
+    if label not in data.columns:
+        raise KeyError(f"Label column '{label}' not found. Available columns: {list(data.columns)}.")
+    labels = data[label].tolist()
+    features = {col: data[col].tolist() for col in data.columns if col != label}
+    return features, labels, data, label
+
+# -------------------------
+# Classification utilities.
+# -------------------------
+
 def gini(labels):
     n = len(labels)
     if n == 0:
@@ -13,7 +34,6 @@ def gini(labels):
         impurity -= p * p
     return impurity
 
-
 def split_data(feature, labels, threshold):
     left_labels, right_labels = [], []
     for feat_val, lbl in zip(feature, labels):
@@ -22,7 +42,6 @@ def split_data(feature, labels, threshold):
         else:
             right_labels.append(lbl)
     return left_labels, right_labels
-
 
 def split_gain(feature, labels, threshold):
     parent_imp = gini(labels)
@@ -35,7 +54,6 @@ def split_gain(feature, labels, threshold):
     weighted_imp = (len(left_labels) / n_total) * gini(left_labels) + \
                    (len(right_labels) / n_total) * gini(right_labels)
     return parent_imp - weighted_imp
-
 
 def split_dataset(features, labels, feature_name, threshold):
     left_features = {f: [] for f in features}
@@ -59,12 +77,12 @@ def best_split(feature, labels):
     best_gain, best_threshold = 0, None
     sorted_vals = sorted(set(feature))
 
-    # no possible split if all feature values identical.
+    # No possible split if all feature values are identical.
     if len(sorted_vals) < 2:
         return 0, None
 
     for i in range(len(sorted_vals) - 1):
-        threshold = (sorted_vals[i] + sorted_vals[i+1]) / 2
+        threshold = (sorted_vals[i] + sorted_vals[i + 1]) / 2
         gain = split_gain(feature, labels, threshold)
         if gain > best_gain:
             best_gain, best_threshold = gain, threshold
@@ -99,9 +117,68 @@ def best_feature_split(features, labels):
 
     return best_feature, best_thresh, best_gain
 
+# -------------------------
+# Regression utilities.
+# -------------------------
 
-def load_dataset(path, label):
-    data = pd.read_csv(path)
-    labels = data[label].tolist()
-    features = {col: data[col].tolist() for col in data.columns if col != label}
-    return features, labels, data, label
+def variance(values):
+    n = len(values)
+    if n <= 1:
+        return 0.0
+    mean = sum(values) / n
+    return sum((v - mean) ** 2 for v in values) / n
+
+def split_variance_gain(feature, labels, threshold):
+    parent_var = variance(labels)
+    left_labels, right_labels = split_data(feature, labels, threshold)
+    n_total = len(labels)
+
+    if len(left_labels) == 0 or len(right_labels) == 0:
+        return 0.0
+
+    weighted_var = (len(left_labels) / n_total) * variance(left_labels) + \
+                   (len(right_labels) / n_total) * variance(right_labels)
+
+    return parent_var - weighted_var
+
+def best_split_regression(feature, labels):
+    best_gain, best_threshold = 0.0, None
+    sorted_vals = sorted(set(feature))
+    if len(sorted_vals) < 2:
+        return 0.0, None
+
+    for i in range(len(sorted_vals) - 1):
+        threshold = (sorted_vals[i] + sorted_vals[i + 1]) / 2
+        gain = split_variance_gain(feature, labels, threshold)
+        if gain > best_gain:
+            best_gain, best_threshold = gain, threshold
+
+    return best_gain, best_threshold
+
+def best_feature_split_regression(features, labels):
+    best_gain = -1.0
+    best_feature = None
+    best_thresh = None
+    best_feat_idx = None
+
+    for idx, (feat_name, feat_values) in enumerate(features.items()):
+        gain, thresh = best_split_regression(feat_values, labels)
+        if thresh is None:
+            continue
+
+        better = (
+            gain > best_gain
+            or (gain == best_gain and (best_feat_idx is None or idx < best_feat_idx))
+            or (gain == best_gain and idx == best_feat_idx and (best_thresh is None or thresh < best_thresh))
+        )
+
+        if better:
+            best_gain = gain
+            best_feature = feat_name
+            best_thresh = thresh
+            best_feat_idx = idx
+
+    if best_feature is None:
+        return None, None, 0.0
+
+    return best_feature, best_thresh, best_gain
