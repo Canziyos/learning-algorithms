@@ -38,10 +38,6 @@ class Forest:
     def fit(self, features, labels):
         return self._train(features, labels)
 
-    # Back-compat if you called train(...) elsewhere.
-    def train(self, features, labels):
-        return self._train(features, labels)
-
     # ----------------- training -----------------
     def _train(self, features, labels):
         self.forest = []

@@ -53,7 +53,7 @@ def run_bagging_classification(path, label_col, n_trees=25, max_depth=None, rand
         bootstrap=True,
         random_state=random_state,
     )
-    clf.train(features, labels)
+    clf.fit(features, labels)
     print("\n=== Bagging Forest (Classification) ===.")
     feature_cols = [c for c in df.columns if c != label_col]
     sample = {col: df[col].iloc[0] for col in feature_cols}
@@ -78,7 +78,7 @@ def run_random_forest_classification(path, label_col, n_trees=100, max_depth=Non
         bootstrap=True,
         random_state=random_state,
     )
-    clf.train(features, labels)
+    clf.fit(features, labels)
     print("\n=== Random Forest (Classification) ===.")
     feature_cols = [c for c in df.columns if c != label_col]
     sample = {col: df[col].iloc[0] for col in feature_cols}
@@ -105,7 +105,7 @@ def run_bagging_regression(path, label_col, n_trees=50, max_depth=None, random_s
         bootstrap=True,
         random_state=random_state,
     )
-    rfb.train(features, labels)
+    rfb.fit(features, labels)
     print("\n=== Bagging Forest (Regression) ===.")
     feature_cols = [c for c in df.columns if c != label_col]
     sample = {col: df[col].iloc[0] for col in feature_cols}
@@ -132,7 +132,7 @@ def run_random_forest_regression(path, label_col, n_trees=100, max_depth=None, m
         bootstrap=True,
         random_state=random_state,
     )
-    rff.train(features, labels)
+    rff.fit(features, labels)
     print("\n=== Random Forest (Regression) ===.")
     feature_cols = [c for c in df.columns if c != label_col]
     sample = {col: df[col].iloc[0] for col in feature_cols}
