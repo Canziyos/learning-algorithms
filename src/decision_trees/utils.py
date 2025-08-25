@@ -1,5 +1,6 @@
 import pandas as pd
 from collections import Counter
+import random
 
 
 #------------------
@@ -182,3 +183,28 @@ def best_feature_split_regression(features, labels):
         return None, None, 0.0
 
     return best_feature, best_thresh, best_gain
+
+
+#-------------------
+# Helper for forest.
+# ------------------
+def resample_with_replacement(features, labels, rng=None):
+    """Return (boot_features, boot_labels, oob_indices)."""
+    n = len(labels)
+    rng = rng or random
+
+    # 1) Draw n indices with replacement.
+    indices = [rng.randrange(n) for _ in range(n)]
+
+    # 2) OOB indices are those never drawn.
+    in_bag = set(indices)
+    oob_indices = [i for i in range(n) if i not in in_bag]
+    
+    # 3) Build resampled dataset.
+    boot_features = {f: [features[f][i] for i in indices] for f in features}
+    boot_labels = [labels[i] for i in indices]
+    return boot_features, boot_labels, oob_indices
+
+    
+
+
