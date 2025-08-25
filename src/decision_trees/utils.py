@@ -1,8 +1,16 @@
+import pandas as pd
+from collections import Counter
+
 def gini(labels):
-    impurity = 1
-    for cls in set(labels):
-        prob = labels.count(cls) / len(labels)
-        impurity -= prob ** 2
+    n = len(labels)
+    if n == 0:
+        return 0.0
+    counts = Counter(labels)
+    impurity = 1.0
+    inv_n = 1.0 / n
+    for c in counts.values():
+        p = c * inv_n
+        impurity -= p * p
     return impurity
 
 
@@ -64,16 +72,36 @@ def best_split(feature, labels):
     return best_gain, best_threshold
 
 def best_feature_split(features, labels):
-    best_gain, best_feature, best_thresh = 0, None, None
+    best_gain = -1.0
+    best_feature = None
+    best_thresh = None
+    best_feat_idx = None
 
-    for feat_name, feat_values in features.items():
+    for idx, (feat_name, feat_values) in enumerate(features.items()):
         gain, thresh = best_split(feat_values, labels)
-
-        # skip features that can't split.
         if thresh is None:
             continue
 
-        if gain > best_gain:
-            best_gain, best_feature, best_thresh = gain, feat_name, thresh
+        better = (
+            gain > best_gain
+            or (gain == best_gain and (best_feat_idx is None or idx < best_feat_idx))
+            or (gain == best_gain and idx == best_feat_idx and (best_thresh is None or thresh < best_thresh))
+        )
+
+        if better:
+            best_gain = gain
+            best_feature = feat_name
+            best_thresh = thresh
+            best_feat_idx = idx
+
+    if best_feature is None:
+        return None, None, 0
 
     return best_feature, best_thresh, best_gain
+
+
+def load_dataset(path, label):
+    data = pd.read_csv(path)
+    labels = data[label].tolist()
+    features = {col: data[col].tolist() for col in data.columns if col != label}
+    return features, labels, data, label
