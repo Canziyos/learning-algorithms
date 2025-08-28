@@ -13,7 +13,7 @@ class Model:
         x = inputs
         self.layer_inputs = []
         self.layer_outputs = []
-        dprint(2, "\n[Model Forward]")   # full trace level
+        dprint(2, "\n[Model Forward]")
         for idx, layer in enumerate(self.layers):
             self.layer_inputs.append(x)
             x = layer.forward(x)

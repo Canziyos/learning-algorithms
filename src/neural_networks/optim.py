@@ -11,7 +11,7 @@ def update(net, grads, lr, momentum=0.9, clip=1.0, weight_decay=0.0):
         if not layer.has_params():
             continue
 
-        # Epoch-level summary logs (level=1)
+        # Epoch-level summary logs (level=1).
         dprint(1, f"\n[Optimizer Update] Layer {l}: {layer.describe()}")
         dprint(1, f"Before: {layer.params()}")
 

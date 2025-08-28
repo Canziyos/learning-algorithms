@@ -28,7 +28,7 @@ dataset = make_dataset(200)
 train, test = dataset[:150], dataset[150:]
 
 # === 2. Define model ===
-conv = Conv1D(n_filters=2, filter_s=2, stride=1, padding=0, activation="relu")
+conv = Conv1D(n_filters=2, filter_s=2, stride=2, padding=1, activation="relu")
 
 # Compute Dense input size dynamically
 out_len = utils.win_num(len(train[0][0]), conv.padding, conv.filter_s, conv.stride)

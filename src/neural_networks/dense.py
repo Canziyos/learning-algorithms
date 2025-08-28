@@ -6,7 +6,7 @@ from activations import get_activation
 class Dense(Layer):
     def __init__(self, input_s=None, n_neurons=None,
                  init="xavier",
-                 activation="relu"):  # pass string now
+                 activation="relu"):
         self.input_s = input_s
         self.n_neurons = n_neurons
         self.z_values = []
