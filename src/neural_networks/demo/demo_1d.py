@@ -32,8 +32,8 @@ train, test = dataset[:150], dataset[150:]
 conv = Conv1D(n_filters=2, filter_s=2, step_s=2, padding=1, activation="relu")
 pool = Pool(pool_s=2, step_s=2, mode="avg", dim=1)
 
-# Compute Dense input size dynamically (Conv → Pool → Flatten)
-out_len_conv = utils.win_num(len(train[0][0]), conv.padding, conv.filter_s, conv.step_s)
+# Compute Dense input size dynamically (Conv => Pool => Flatten)
+out_len_conv = utils.win_num_1d(len(train[0][0]), conv.padding, conv.filter_s, conv.step_s)
 out_len_pool = ((out_len_conv - pool.pool_s) // pool.step_s) + 1
 dense_input_size = conv.n_filters * out_len_pool
 

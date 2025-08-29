@@ -1,5 +1,5 @@
 from layer_base import Layer
-from utils import init_weights, init_bias, win_num, dprint
+from utils import init_weights, init_bias, win_num_1d, dprint
 from activations import get_activation
 
 class Conv1D(Layer):
@@ -44,14 +44,13 @@ class Conv1D(Layer):
         self.inputs = padded_inputs
 
         # 2. Compute number of windows (output length).
-        out_len = win_num(len(inputs), self.padding, self.filter_s, self.step_s)
+        out_len = win_num_1d(len(inputs), self.padding, self.filter_s, self.step_s)
 
         # reset storages.
         self.z_values = [[] for _ in range(self.n_filters)]
         self.a_values = [[] for _ in range(self.n_filters)]
 
         dprint(2, f"\n[Conv1D Forward] inputs={inputs}")
-        dprint(2, f"Padded={padded_inputs}, out_len={out_len}")
 
         # 3. Loop over windows.
         for pos in range(out_len):
@@ -69,9 +68,6 @@ class Conv1D(Layer):
         for f in range(self.n_filters):
             self.a_values[f] = [self.activation(z) for z in self.z_values[f]]
             dprint(2, f"Filter {f} weights={self.filters[f]}, bias={self.biases[f]}")
-            dprint(2, f"Filter {f} z={self.z_values[f]}")
-            dprint(2, f"Filter {f} a={self.a_values[f]}")
-
         return self.a_values
 
     def backward(self, grads):
@@ -108,17 +104,11 @@ class Conv1D(Layer):
                 end = start + self.filter_s
                 for i in range(self.filter_s):
                     input_grads[start+i] += deltas[f][p] * self.filters[f][i]
+                    
 
         # Trim padding.
         if self.padding > 0:
             input_grads = input_grads[self.padding: -self.padding]
-
-        dprint(2, "\n[Conv1D Backward]")
-        for f in range(self.n_filters):
-            dprint(2, f"Filter {f} deltas={deltas[f]}")
-            dprint(2, f"Filter {f} weight grads={w_grads[f]}")
-            dprint(2, f"Filter {f} bias grad={b_grads[f]}")
-        dprint(2, f"Input grads={input_grads}")
 
         return {"w": w_grads, "b": b_grads}, input_grads
 

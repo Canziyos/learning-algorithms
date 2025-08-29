@@ -144,8 +144,23 @@ def init_bias(method="zero"):
         return random.uniform(-0.1, 0.1)
     else:
         raise ValueError(f"Unknown bias init method: {method}")
-    
-def win_num(L, P, F, S):
+
+def win_num_2d(H, W, P, K_h, K_w, S):
+    """
+    Compute output height and width for 2D convolution.
+
+    H = input height
+    W = input width
+    P = padding (assumed same in both dims for now)
+    K_h = kernel height
+    K_w = kernel width
+    S = stride
+    """
+    out_H = ((H + 2*P - K_h) // S) + 1
+    out_W = ((W + 2*P - K_w) // S) + 1
+    return out_H, out_W
+
+def win_num_1d(L, P, F, S):
     """
     Compute number of sliding windows (output length).
     L = input length.
