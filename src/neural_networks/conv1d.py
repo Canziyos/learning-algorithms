@@ -3,12 +3,12 @@ from utils import init_weights, init_bias, win_num, dprint
 from activations import get_activation
 
 class Conv1D(Layer):
-    def __init__(self, n_filters=None, filter_s=None, stride=1, padding=0,
+    def __init__(self, n_filters=None, filter_s=None, step_s=1, padding=0,
                  init="xavier", activation="relu"):
         super().__init__()
         self.n_filters = n_filters          # number of kernels.
         self.filter_s = filter_s            # length of each kernel.
-        self.stride = stride
+        self.step_s = step_s
         self.padding = padding
         self.init = init                    # weight init method (string).
         
@@ -44,7 +44,7 @@ class Conv1D(Layer):
         self.inputs = padded_inputs
 
         # 2. Compute number of windows (output length).
-        out_len = win_num(len(inputs), self.padding, self.filter_s, self.stride)
+        out_len = win_num(len(inputs), self.padding, self.filter_s, self.step_s)
 
         # reset storages.
         self.z_values = [[] for _ in range(self.n_filters)]
@@ -55,7 +55,7 @@ class Conv1D(Layer):
 
         # 3. Loop over windows.
         for pos in range(out_len):
-            start = pos * self.stride
+            start = pos * self.step_s
             end = start + self.filter_s
             window = padded_inputs[start:end]
 
@@ -95,7 +95,7 @@ class Conv1D(Layer):
         # 2. Compute weight gradients.
         for f in range(self.n_filters):
             for p in range(len(self.z_values[f])):
-                start = p * self.stride
+                start = p * self.step_s
                 end = start + self.filter_s
                 window = self.inputs[start:end]
                 for i in range(self.filter_s):
@@ -104,7 +104,7 @@ class Conv1D(Layer):
         # 3. Compute input gradients.
         for f in range(self.n_filters):
             for p in range(len(self.z_values[f])):
-                start = p * self.stride
+                start = p * self.step_s
                 end = start + self.filter_s
                 for i in range(self.filter_s):
                     input_grads[start+i] += deltas[f][p] * self.filters[f][i]
@@ -158,4 +158,4 @@ class Conv1D(Layer):
         return True
 
     def describe(self):
-        return f"Conv1D: {self.n_filters} filters, size={self.filter_s}, stride={self.stride}, padding={self.padding}, activation={self.activation.__name__}"
+        return f"Conv1D: {self.n_filters} filters, size={self.filter_s}, step_size={self.step_s}, padding={self.padding}, activation={self.activation.__name__}"

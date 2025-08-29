@@ -1,4 +1,4 @@
-import math, random
+import math, random, numpy as np
 
 # Debug levels:
 # 0 = silent
@@ -154,3 +154,22 @@ def win_num(L, P, F, S):
     S = stride.
     """
     return ((L + 2*P - F) // S) + 1
+
+def win_slide_1d(seq, win_s, step):
+    seq = np.asarray(seq)
+    starts = np.arange(0, seq.shape[0] - win_s + 1, step)   # window start indices
+    windows = [seq[s:s+win_s] for s in starts]
+    return np.stack(windows)
+
+def win_slide_2d(seq, win_s, step):
+    seq = np.asarray(seq)
+    H, W = seq.shape
+    starts1 = np.arange(0, H - win_s + 1, step)   # row starts
+    starts2 = np.arange(0, W - win_s + 1, step)   # col starts
+    
+    windows = []
+    for i in starts1:
+        for j in starts2:
+            patch = seq[i:i+win_s, j:j+win_s]
+            windows.append(patch)
+    return np.stack(windows)

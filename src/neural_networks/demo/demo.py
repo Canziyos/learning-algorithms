@@ -4,11 +4,12 @@ from dense import Dense
 from model import Model
 import optim
 from flatten import Flatten
+from pool import Pool
 import utils
 
-import utils
-utils.DEBUG_LEVEL = 0   # 0 = silent, 1 = epoch summaries, 2 = full chaos.
-# === 1. Generate toy dataset ===
+utils.DEBUG_LEVEL = 0   # 0 = silent, 1 = optimizer summaries, 2 = full chaos
+
+# === 1. Generate dataset ===
 def make_dataset(n_samples=200, length=6):
     data = []
     for _ in range(n_samples):
@@ -28,15 +29,17 @@ dataset = make_dataset(200)
 train, test = dataset[:150], dataset[150:]
 
 # === 2. Define model ===
-conv = Conv1D(n_filters=2, filter_s=2, stride=2, padding=1, activation="relu")
+conv = Conv1D(n_filters=2, filter_s=2, step_s=2, padding=1, activation="relu")
+pool = Pool(pool_s=2, step_s=2, mode="avg", dim=1)
 
-# Compute Dense input size dynamically
-out_len = utils.win_num(len(train[0][0]), conv.padding, conv.filter_s, conv.stride)
-dense_input_size = conv.n_filters * out_len
+# Compute Dense input size dynamically (Conv → Pool → Flatten)
+out_len_conv = utils.win_num(len(train[0][0]), conv.padding, conv.filter_s, conv.step_s)
+out_len_pool = ((out_len_conv - pool.pool_s) // pool.step_s) + 1
+dense_input_size = conv.n_filters * out_len_pool
 
 dense = Dense(input_s=dense_input_size, n_neurons=1, activation="sigmoid")
 
-net = Model([conv, Flatten(), dense])
+net = Model([conv, pool, Flatten(), dense])
 
 # === 3. Training loop ===
 epochs = 20

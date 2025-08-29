@@ -1,5 +1,6 @@
 from layer_base import Layer
 from utils import dprint
+import numpy as np
 
 class Model:
     def __init__(self, layers):
@@ -18,9 +19,12 @@ class Model:
             self.layer_inputs.append(x)
             x = layer.forward(x)
             self.layer_outputs.append(x)
-            dprint(2, f" Layer {idx}: {layer.describe()}")
-            dprint(2, f"   Input={self.layer_inputs[-1]}")
-            dprint(2, f"   Output={self.layer_outputs[-1]}")
+
+            # 👇 Shape-aware debug
+            arr = np.array(x, dtype=object) if hasattr(x, "__len__") else None
+            shape_info = f"shape {arr.shape}" if arr is not None else "scalar"
+            dprint(2, f" Layer {idx}: {layer.describe()} → {shape_info}")
+
         return x
 
     def backward(self, y_true, y_pred, loss="mse"):
