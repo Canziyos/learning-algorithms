@@ -1,37 +1,37 @@
-import math
+import numpy as np
 
 def sigmoid(z):
-    return 1 / (1 + math.exp(-z))
+    return 1 / (1 + np.exp(-z))
 
 def sigmoid_prime(z):
     s = sigmoid(z)
     return s * (1 - s)
 
 def relu(z):
-    return max(0.0, z)
+    return np.maximum(0.0, z)
 
 def relu_prime(z):
-    return 1.0 if z > 0 else 0.0
+    return (z>0).astype(float)
 
 def identity(z):
     return z
 
 def identity_prime(z):
-    return 1.0
+    return np.ones_like(z)
 
 def tanh(z):
-    return math.tanh(z)
+    return np.tanh(z)
 
 def tanh_prime(z):
-    t = math.tanh(z)
+    t = np.tanh(z)
     return 1 - t**2
 
 def softmax(z_values):
     # Subtract max (numerical stability).
-    max_z = max(z_values)
-    exp_vals = [math.exp(z - max_z) for z in z_values]
-    sum_exp = sum(exp_vals)
-    return [val / sum_exp for val in exp_vals]
+    max_z = np.max(z_values)
+    exp_vals = np.exp(z_values - max_z)
+    sum_exp = np.sum(exp_vals)
+    return exp_vals/sum_exp
 
 def get_activation(name):
     """

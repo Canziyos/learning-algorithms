@@ -118,30 +118,30 @@ def set_training_mode(net, training=True):
         if hasattr(layer, "training"):
             layer.training = training
 
-def init_weights(n_in, n_out, method="xavier"):
+def init_weights(n_out, n_in, method="xavier"):
     """
     Initialize a list of weights given fan_in (n_in) and fan_out (n_out).
     Supports Xavier, He, or uniform random.
     """
     method = method.lower()
     if method == "xavier":
-        limit = math.sqrt(6 / (n_in + n_out))
-        return [random.uniform(-limit, limit) for _ in range(n_in)]
+        limit = math.sqrt(6 / (n_out + n_in))
+        return np.random.uniform(-limit, +limit, (n_out, n_in))
     elif method == "he":
         limit = math.sqrt(6 / n_in)
-        return [random.uniform(-limit, limit) for _ in range(n_in)]
+        return np.random.uniform(-limit, +limit, (n_out, n_in))
     else:
-        return [random.uniform(-0.5, 0.5) for _ in range(n_in)]
+        return np.random.uniform(-0.5, 0.5, (n_out, n_in))
 
-def init_bias(method="zero"):
+def init_bias(n_out, method="zero"):
     """
     Initialize a bias term.
     method: "zero" (default) or "random".
     """
     if method == "zero":
-        return 0.0
+        return np.zeros(n_out)
     elif method == "random":
-        return random.uniform(-0.1, 0.1)
+        return np.random.uniform(-0.1, 0.1, n_out)
     else:
         raise ValueError(f"Unknown bias init method: {method}")
 

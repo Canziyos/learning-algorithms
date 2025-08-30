@@ -209,3 +209,5 @@ __marimo__/
 #datasets/
 # Jupyter notebooks
 notebooks/.ipynb_checkpoints/
+
+*.png
