@@ -28,7 +28,7 @@ class ClassificationTree:
         self._resolved_max_features = self._resolve_max_features(self.max_features, self._d)
         self.root = self._build_tree(features, labels, depth=0)
 
-    # ---- internals ----
+    # ---- internals ---- #
 
     def _make_leaf(self, labels, depth):
         counts = Counter(labels)
@@ -78,7 +78,7 @@ class ClassificationTree:
         if len(labels) < self.min_samples_split:
             return self._make_leaf(labels, depth)
 
-        # ---- Random-Subset feature selection (RF bit) ----
+        # ---- Random-Subset feature selection (RF bit) --- #
         candidate_feats = self._choose_feature_subset(features)
         sub_features = {f: features[f] for f in candidate_feats}
 
@@ -105,7 +105,7 @@ class ClassificationTree:
         return Node(feature=best_feat, threshold=best_thresh, gain=best_gain,
                     depth=depth, left=left_child, right=right_child)
 
-    # ---- API ----
+    # ---- API ---- #
     def predict_one(self, sample):
         node = self.root
         while node.value is None:

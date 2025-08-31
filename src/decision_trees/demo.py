@@ -69,8 +69,12 @@ def run_bagging_classification(path, label_col, n_trees=25, max_depth=None, rand
         print("OOB not available:", e)
 
 
-def run_random_forest_classification(path, label_col, n_trees=100, max_depth=None, max_features="sqrt", random_state=1347):
+def run_random_forest_classification(path, label_col, n_trees=100,
+                                    max_depth=None, max_features="sqrt",
+                                    random_state=1347):
+    
     features, labels, df, label_col = load_dataset(path, label_col)
+
     clf = ClassificationForest(
         n_trees=n_trees,
         max_depth=max_depth,
@@ -78,6 +82,7 @@ def run_random_forest_classification(path, label_col, n_trees=100, max_depth=Non
         bootstrap=True,
         random_state=random_state,
     )
+
     clf.fit(features, labels)
     print("\n=== Random Forest (Classification) ===.")
     feature_cols = [c for c in df.columns if c != label_col]
@@ -95,35 +100,45 @@ def run_random_forest_classification(path, label_col, n_trees=100, max_depth=Non
 
 
 def run_bagging_regression(path, label_col, n_trees=50, max_depth=None, random_state=1347):
+
     """Bagging regression forest: bootstrap + average predictions (no feature subspace)."""
     features, labels, df, label_col = load_dataset(path, label_col)
     rfb = Forest(
         task="regression",
         n_trees=n_trees,
         max_depth=max_depth,
-        max_features=None,   # bagging (all features evaluated at splits)
+        max_features=None,   # bagging (all features evaluated at splits).
         bootstrap=True,
         random_state=random_state,
     )
+
     rfb.fit(features, labels)
     print("\n=== Bagging Forest (Regression) ===.")
+    
     feature_cols = [c for c in df.columns if c != label_col]
     sample = {col: df[col].iloc[0] for col in feature_cols}
     print("Prediction for first row:", rfb.predict_one(sample))
+
     samples = [dict(zip(feature_cols, row)) for row in df[feature_cols].values]
     y_pred = rfb.predict_many(samples)
     print("MSE on dataset (in-sample):", mse(labels, y_pred))
     print("MAE on dataset (in-sample):", mae(labels, y_pred))
+
     try:
         scores = rfb.oob_scores()
-        print(f"OOB MSE: {scores['mse']:.4f}, OOB MAE: {scores['mae']:.4f}, OOB R2: {scores['r2']:.4f}, Coverage: {scores['coverage']:.3f}.\n")
+        print(f"OOB MSE: {scores['mse']:.4f}, OOB MAE: {scores['mae']:.4f}, \
+              OOB R2: {scores['r2']:.4f}, Coverage: {scores['coverage']:.3f}.\n")
+        
     except ValueError as e:
         print("OOB not available:", e)
 
 
-def run_random_forest_regression(path, label_col, n_trees=100, max_depth=None, max_features="sqrt", random_state=1347):
+def run_random_forest_regression(path, label_col, n_trees=100,
+                                max_depth=None, max_features="sqrt", random_state=1347):
+    
     """Random Forest Regressor: bagging + per-node random subset of features."""
     features, labels, df, label_col = load_dataset(path, label_col)
+
     rff = Forest(
         task="regression",
         n_trees=n_trees,
@@ -132,8 +147,10 @@ def run_random_forest_regression(path, label_col, n_trees=100, max_depth=None, m
         bootstrap=True,
         random_state=random_state,
     )
+
     rff.fit(features, labels)
     print("\n=== Random Forest (Regression) ===.")
+    
     feature_cols = [c for c in df.columns if c != label_col]
     sample = {col: df[col].iloc[0] for col in feature_cols}
     print("Prediction for first row:", rff.predict_one(sample))
