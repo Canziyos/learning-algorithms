@@ -27,11 +27,12 @@ def tanh_prime(z):
     return 1 - t**2
 
 def softmax(z_values):
-    # Subtract max (numerical stability).
-    max_z = np.max(z_values)
-    exp_vals = np.exp(z_values - max_z)
-    sum_exp = np.sum(exp_vals)
-    return exp_vals/sum_exp
+    z = np.asarray(z_values)
+    # subtract row-wise (last-axis)-
+    z = z - np.max(z, axis=-1, keepdims=True)
+    exp_vals = np.exp(z)
+    sum_exp = np.sum(exp_vals, axis=-1, keepdims=True)
+    return exp_vals / sum_exp
 
 def get_activation(name):
     """

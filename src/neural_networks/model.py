@@ -1,5 +1,5 @@
+# model.py
 from layer_base import Layer
-from utils import dprint
 import numpy as np
 
 class Model:
@@ -11,55 +11,63 @@ class Model:
         self.n_layers = len(layers)
 
     def forward(self, inputs):
+        """
+        Passes inputs through the stack.
+        Accepts single sample or batched tensors; layers decide shape handling.
+        """
         x = inputs
         self.layer_inputs = []
         self.layer_outputs = []
-        dprint(2, "\n[Model Forward]")
-        for idx, layer in enumerate(self.layers):
+        for layer in self.layers:
             self.layer_inputs.append(x)
             x = layer.forward(x)
             self.layer_outputs.append(x)
-
-            # 👇 Shape-aware debug
-            arr = np.array(x, dtype=object) if hasattr(x, "__len__") else None
-            shape_info = f"shape {arr.shape}" if arr is not None else "scalar"
-            dprint(2, f" Layer {idx}: {layer.describe()} → {shape_info}")
-
         return x
 
     def backward(self, y_true, y_pred, loss="mse"):
+        """
+        Seeds gradient from loss and backprops through layers.
+        Supports (K,) or (B,K) shapes for y_true/y_pred.
+        Returns: list of per-layer param grads ({} for non-param layers).
+        """
+        y_pred = np.asarray(y_pred)
+        y_true = np.asarray(y_true)
+
+        # Normalize to (B, K)
+        if y_pred.ndim == 1: y_pred = y_pred[None, :]
+        if y_true.ndim == 1: y_true = y_true[None, :]
+        B = y_true.shape[0]
+        K = y_true.shape[1]  # per-sample dimension
+
+        # Determine last activation (if any),
+        last = self.layers[-1]
+        last_act = getattr(last, "activation", None)
+        last_act_name = getattr(last_act, "__name__", "") if last_act else ""
+
+        # Seed gradient from loss.
+        if loss == "cross_entropy" and last_act_name == "softmax":
+            # classic simplification for softmax+CE.
+            grad_out = (y_pred - y_true) / B
+        else:
+            # MSE-style seed, consistent with per-sample mean then batch mean.
+            grad_out = (2.0 / (B * K)) * (y_pred - y_true)
+
         grads = [None] * self.n_layers
 
-        # 1. Initial gradient from loss
-        if loss == "cross_entropy" and hasattr(self.layers[-1], "activation") and \
-           self.layers[-1].activation.__name__ == "softmax":
-            grad_out = [yp - yt for yp, yt in zip(y_pred, y_true)]
-        else:
-            grad_out = [(2/len(y_true)) * (yp - yt) for yp, yt in zip(y_pred, y_true)]
-
-        dprint(2, "\n[Model Backward]")
-        dprint(2, f" Initial grad_out from loss: {grad_out}")
-
-        # 2. Backward pass through layers
-        for l in reversed(range(self.n_layers)):
-            layer = self.layers[l]
-            dprint(2, f"\n Backward through Layer {l}: {layer.describe()}")
-
+        # Backprop.
+        for li in reversed(range(self.n_layers)):
+            layer = self.layers[li]
             if layer.has_params():
                 param_grads, grad_out = layer.backward(grad_out)
-                grads[l] = param_grads
-                dprint(2, f"   Param grads: {param_grads}")
+                grads[li] = param_grads
             else:
                 grad_out = layer.backward(grad_out)
-                grads[l] = {"w": [], "b": []}  # placeholder
-                dprint(2, f"   Non-param layer grad_out: {grad_out}")
-
-            dprint(2, f"   grad_out passed upstream: {grad_out}")
+                grads[li] = {}  # no params to update
 
         return grads
 
     def summary(self):
         print("\nModel Summary:")
-        print(f"  Total layers: {self.n_layers}")
+        print(f"- Total layers: {self.n_layers}")
         for i, layer in enumerate(self.layers):
-            print(f"  Layer {i+1}: {layer.describe()}")
+            print(f"- Layer {i+1}: {layer.describe()}")
