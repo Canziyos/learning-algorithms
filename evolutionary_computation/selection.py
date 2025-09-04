@@ -1,64 +1,92 @@
 import numpy as np
 from utils import rank_probabilities
 
+
 def rws(tours, fitnesses, lengths):
     """
-    Select one individual index using roulette wheel selection.
-    Returns (tour, fitness, length).
+    Roulette Wheel Selection (fitness-proportionate).
+    Returns a single (tour, fitness, length).
     """
-    total_fitness = np.sum(fitnesses)
+    N = len(fitnesses)
+    assert N > 0, "Empty population."
+    total = float(np.sum(fitnesses))
 
-    # Edge case: if all fitness are 0, choose randomly
-    if total_fitness == 0:
-        idx = np.random.randint(len(fitnesses))
+    # If no selection pressure (all zero), pick uniformly at random.
+    if total <= 0.0:
+        idx = np.random.randint(N)
         return tours[idx], fitnesses[idx], lengths[idx]
 
-    # Normalize fitness to probabilities
-    probabilities = fitnesses / total_fitness
+    probs = fitnesses / total
+    # Numerical safety: ensure proper normalization.
+    s = probs.sum()
+    if s <= 0:
+        idx = np.random.randint(N)
+    else:
+        probs = probs / s
+        idx = np.random.choice(N, p=probs)
 
-    # Spin the wheel
-    idx = np.random.choice(len(fitnesses), p=probabilities)
     return tours[idx], fitnesses[idx], lengths[idx]
 
 
 def ts(tours, fitnesses, lengths, n_parents, n_candidates, deterministic=True, p_win=0.8):
     """
-    Select n_parents winners via tournament selection.
-    Returns lists of (tours, fitnesses, lengths) for winners.
+    Tournament Selection.
+    Returns arrays of shape (n_parents, ...) for (tours, fitnesses, lengths).
+    - deterministic=True: winner is the best in the sample.
+    - deterministic=False: best wins with probability p_win; otherwise pick from the rest.
     """
+    N = len(fitnesses)
+    assert N > 0, "Empty population."
+    n_candidates = max(1, min(n_candidates, N))
+    p_win = float(np.clip(p_win, 0.0, 1.0))
+
     winners_tours = []
     winners_fitnesses = []
     winners_lengths = []
 
     for _ in range(n_parents):
-        # Sample candidate indices
-        candidate_indices = np.random.choice(len(fitnesses), size=n_candidates, replace=False)
+        cand_idx = np.random.choice(N, size=n_candidates, replace=False)
 
-        if deterministic:
-            # Pick the best candidate (max fitness)
-            best_idx = candidate_indices[np.argmax(fitnesses[candidate_indices])]
+        if deterministic or n_candidates == 1:
+            # Pick the best candidate (max fitness).
+            best_local = cand_idx[np.argmax(fitnesses[cand_idx])]
+            pick = best_local
         else:
-            # Probabilistic: best wins with probability p_win
-            sorted_indices = candidate_indices[np.argsort(fitnesses[candidate_indices])[::-1]]
-            if np.random.rand() < p_win:
-                best_idx = sorted_indices[0]
+            # Sort candidates by fitness (desc).
+            sorted_idx = cand_idx[np.argsort(fitnesses[cand_idx])[::-1]]
+            if np.random.rand() < p_win or len(sorted_idx) == 1:
+                pick = sorted_idx[0]
             else:
-                best_idx = np.random.choice(sorted_indices[1:])
+                # Pick one from the remaining candidates.
+                pick = np.random.choice(sorted_idx[1:])
 
-        winners_tours.append(tours[best_idx])
-        winners_fitnesses.append(fitnesses[best_idx])
-        winners_lengths.append(lengths[best_idx])
+        winners_tours.append(tours[pick])
+        winners_fitnesses.append(fitnesses[pick])
+        winners_lengths.append(lengths[pick])
 
-    return (np.array(winners_tours),
-            np.array(winners_fitnesses),
-            np.array(winners_lengths))
+    return (
+        np.array(winners_tours),
+        np.array(winners_fitnesses, dtype=np.float64),
+        np.array(winners_lengths, dtype=np.float64),
+    )
+
 
 def lrs(tours, fitnesses, lengths, sel_pres=1.7):
-    N = fitnesses.shape[0] #len(fitnesses)
-    indices = np.argsort(fitnesses)
+    """
+    Linear Ranking Selection (single draw).
+    - Rank 0 is best (highest fitness).
+    - Probabilities from rank_probabilities (guards + normalization inside).
+    Returns a single (tour, fitness, length).
+    """
+    N = fitnesses.shape[0]
+    assert N > 0, "Empty population."
+
+    # Sort indices by fitness DESC so index 0 is the best.
+    indices = np.argsort(fitnesses)[::-1]
+
     probs = rank_probabilities(N, sel_pres)
-    r_selected = np.random.choice(N, p=probs, replace=False)
+    # Draw a rank according to ranking probabilities, then map to actual idx.
+    r_selected = np.random.choice(N, p=probs)
     winner_idx = indices[r_selected]
 
     return tours[winner_idx], fitnesses[winner_idx], lengths[winner_idx]
-   

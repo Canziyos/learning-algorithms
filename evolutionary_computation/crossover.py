@@ -2,29 +2,52 @@ import numpy as np
 
 
 def ox_1child(tour1, tour2):
-    cut_points = np.random.choice(range(1, len(tour1)-1), 2, replace=False)
+    """
+    Order Crossover (OX) producing one child.
+    - Assumes depot/city 0 fixed at start and end.
+    - Cut points exclude endpoints [1 .. n-2].
+    """
+    n = len(tour1)
+    assert n == len(tour2), "Parents must have same length."
+    assert tour1[0] == 0 and tour1[-1] == 0 and tour2[0] == 0 and tour2[-1] == 0, \
+        "Endpoints must be 0 in both parents."
+
+    # Choose two cut points in the middle segment.
+    cut_points = np.random.choice(range(1, n - 1), 2, replace=False)
     slice_st, slice_end = np.min(cut_points), np.max(cut_points)
-    child = np.full(tour1.shape[0], -1, dtype=int)
 
-    # Copy slice from parent1
-    child[slice_st:slice_end+1] = tour1[slice_st:slice_end+1]
+    # Start with empty child, copy the slice from parent1.
+    child = np.full(n, -1, dtype=int)
+    child[slice_st:slice_end + 1] = tour1[slice_st:slice_end + 1]
 
-    # Fill the remaining slots from parent2, skipping duplicates
-    for city in tour2[1:-1]:  # exclude start/end
-        if city not in child:
-            for j in range(1, len(child)-1):  # only middle positions--
-                if child[j] == -1:
-                    child[j] = city
-                    break
+    used = set(child[slice_st:slice_end + 1])  # cities already placed
 
-    # Ensure start/end = 0
+    # Helpers to move within middle indices [1 .. n-2] circularly.
+    def next_mid(idx):
+        return 1 if idx >= (n - 2) else (idx + 1)
+
+    # Phase 1: compute remaining cities in P2 wrap-order after the slice end.
+    remaining = []
+    rp = next_mid(slice_end)
+    for _ in range(n - 2):  # scan all middle positions once
+        city = tour2[rp]
+        if city not in used:
+            remaining.append(city)
+        rp = next_mid(rp)
+
+    # Phase 2: fill empty child slots in the same wrap-order after the slice end.
+    wp = next_mid(slice_end)
+    for city in remaining:
+        while child[wp] != -1:
+            wp = next_mid(wp)
+        child[wp] = city
+        wp = next_mid(wp)
+
+    # Fix endpoints (depot).
     child[0], child[-1] = 0, 0
     return child
 
+
 def ox2child(tour1, tour2):
-    child1 = ox_1child(tour1, tour2)
-    child2 = ox_1child(tour2, tour1)
-
-    return child1, child2
-
-
+    """Order Crossover (OX) producing two children."""
+    return ox_1child(tour1, tour2), ox_1child(tour2, tour1)
