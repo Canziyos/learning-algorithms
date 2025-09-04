@@ -16,7 +16,7 @@ def MSE(y_true, y_pred):
 
 def cross_entropy(y_true, y_pred, eps=1e-15):
     """
-    Cross-entropy loss for multi-class classification with one-hot targets.
+    Cross-entropy loss for multi-class classification with encoded target vector..
     Supports vectors or batches (same shape).
     """
     y_true, y_pred = np.array(y_true), np.array(y_pred)
