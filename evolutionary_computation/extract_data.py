@@ -22,3 +22,4 @@ def parse_data(path):
         return np.array(coords, dtype=np.float64)
     except Exception as e:
         raise RuntimeError(f"Error while parsing {path}: {e}")
+

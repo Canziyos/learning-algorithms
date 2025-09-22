@@ -1,18 +1,11 @@
 import numpy as np
 
-
-def _validate_population(pop):
-    tours, fitnesses, lengths = pop
-    assert isinstance(tours, np.ndarray) and isinstance(fitnesses, np.ndarray) and isinstance(lengths, np.ndarray), \
-        "Population components must be NumPy arrays."
-    N = tours.shape[0]
-    assert fitnesses.shape == (N,) and lengths.shape == (N,), \
-        "Shapes must be: tours (N, L), fitnesses (N,), lengths (N,)."
-    return N, tours.shape[1]
+from utils import validate_population
 
 
 def _argsort_desc(fitnesses):
-    """Return indices sorting by fitness descending, treating NaNs as worst."""
+    """Return indices sorting by fitness descending,
+    treat NaNs as worst."""
     f = np.nan_to_num(fitnesses, nan=-np.inf)
     return np.argsort(f)[::-1]
 
@@ -20,10 +13,10 @@ def _argsort_desc(fitnesses):
 def pickup_best(population, k):
     """
     Return the top-k individuals by fitness (descending).
-    If k==0, returns empty arrays with correct shapes/dtypes.
+    If k==0, returns empty arrays.
     """
     tours, fitnesses, lengths = population
-    N, L = _validate_population(population)
+    N, L = validate_population(population)
     k = int(np.clip(k, 0, N))
 
     if k == 0:
@@ -45,8 +38,8 @@ def update_population(old_population, offspring, n_eliter=1, mode="elitism"):
     Always returns exactly N individuals (matching old_population size).
     """
     # Validate inputs and establish N.
-    N_old, L_old = _validate_population(old_population)
-    N_child, L_child = _validate_population(offspring)
+    N_old, L_old = validate_population(old_population)
+    N_child, L_child = validate_population(offspring)
     # assert L_old == L_child, "Tour lengths (number of genes) must match between old and offspring."
 
     tours_old, fits_old, lens_old = old_population
@@ -109,8 +102,8 @@ def update_population(old_population, offspring, n_eliter=1, mode="elitism"):
     elif mode == "bestN":
         # Pool old + children, keep best N.
         tours_pool = np.vstack([tours_old, tours_c])
-        fits_pool  = np.concatenate([fits_old, fits_c])
-        lens_pool  = np.concatenate([lens_old, lens_c])
+        fits_pool = np.concatenate([fits_old, fits_c])
+        lens_pool = np.concatenate([lens_old, lens_c])
         return pickup_best((tours_pool, fits_pool, lens_pool), N_old)
 
     else:
@@ -121,7 +114,7 @@ def should_stop(generation, evaluations, best_fitness,
                 max_generations, max_evaluations, target_fitness=None):
     """
     Stop if:
-      - target_fitness reached (if provided), or
+      - target_fitness reached, or
       - evaluations >= max_evaluations, or
       - generation  >= max_generations.
     """

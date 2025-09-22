@@ -3,26 +3,39 @@ from layer_base import Layer
 import numpy as np
 
 class Model:
-    def __init__(self, layers):
+    def __init__(self, layers, shape_debug=False):
         for l in layers:
             if not isinstance(l, Layer):
                 raise TypeError("All layers must inherit from Layer base class.")
         self.layers = layers
         self.n_layers = len(layers)
+        self.shape_debug = shape_debug
 
     def forward(self, inputs):
         """
         Passes inputs through the stack.
         Accepts single sample or batched tensors; layers decide shape handling.
         """
-        x = inputs
+        x = np.asarray(inputs)
+        if x.ndim == 1:
+            x = x[None, :]  # promote to batch
+
         self.layer_inputs = []
         self.layer_outputs = []
-        for layer in self.layers:
+        for li, layer in enumerate(self.layers):
             self.layer_inputs.append(x)
             x = layer.forward(x)
             self.layer_outputs.append(x)
+
+            if self.shape_debug:
+                print(f"[Layer {li+1} {layer.describe()}] in={self.layer_inputs[-1].shape}, out={x.shape}")
+
+            # enforce batch dimension stays intact.
+            assert x.shape[0] == self.layer_inputs[-1].shape[0], \
+                f"Batch dim mismatch in {layer.describe()}: {self.layer_inputs[-1].shape} -> {x.shape}"
+
         return x
+
 
     def backward(self, y_true, y_pred, loss="mse"):
         """

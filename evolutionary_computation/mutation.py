@@ -2,23 +2,22 @@ import numpy as np
 
 
 def mutate_swap(tour, n_swaps=1, prob=0.1):
-    """
-    Swap-mutation on interior cities (excludes start/end depot 0).
-    Copy-on-mutate: returns a new array only if mutation happens; otherwise returns the original.
-    """
     assert len(tour) >= 4, "Mutation expects at least 2 interior positions."
-    if np.random.rand() < prob:
-        mutated = tour.copy()
-        for _ in range(n_swaps):
-            i, j = np.random.choice(range(1, len(tour) - 1), 2, replace=False)
-            mutated[i], mutated[j] = mutated[j], mutated[i]
-        return mutated
-    return tour
+    if np.random.rand() >= prob or n_swaps <= 0:
+        return tour
+    mutated = tour.copy()
+    interior = np.arange(1, len(tour) - 1)
+    k = min(n_swaps, len(interior) // 2)
+    picks = np.random.choice(interior, size=2 * k, replace=False)
+    for a, b in zip(picks[::2], picks[1::2]):
+        mutated[a], mutated[b] = mutated[b], mutated[a]
+    return mutated
 
 
-def mutate_insertion(tour, prob=0.1):
+
+def mutate_insert(tour, prob=0.1):
     """
-    Insertion-mutation: remove one interior city and reinsert it at another interior position.
+    Remove one interior city and reinsert it at another interior position.
     Copy-on-mutate semantics.
     """
     assert len(tour) >= 4, "Mutation expects at least 2 interior positions."
@@ -34,7 +33,7 @@ def mutate_insertion(tour, prob=0.1):
     return tour
 
 
-def mutate_inversion(tour, prob=0.1):
+def mutate_inverse(tour, prob=0.1):
     """
     Inversion-mutation: reverse a random interior segment.
     Copy-on-mutate semantics.

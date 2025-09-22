@@ -1,6 +1,6 @@
 # === Mutation sanity test (swap / insertion / inversion) ===
 import numpy as np
-from mutation import mutate_swap, mutate_insertion, mutate_inversion
+from mutation import mutate_swap, mutate_insert, mutate_inversion
 
 np.random.seed(123)
 
@@ -15,7 +15,7 @@ t1 = base.copy()
 t2 = base.copy()
 t3 = base.copy()
 assert mutate_swap(t1, prob=0.0) is t1, "swap: should return original object when prob=0"
-assert mutate_insertion(t2, prob=0.0) is t2, "insertion: should return original object when prob=0"
+assert mutate_insert(t2, prob=0.0) is t2, "insertion: should return original object when prob=0"
 assert mutate_inversion(t3, prob=0.0) is t3, "inversion: should return original object when prob=0"
 
 # 2) prob=1 path keeps a valid tour; across trials, at least one actual change occurs
@@ -29,5 +29,5 @@ def run_trials(mutator, name, trials=50):
     print(f"[{name}] valid={True} | changed_at_least_once={(changed > 0)} | changes={changed}/{trials}")
 
 run_trials(mutate_swap, "swap")
-run_trials(mutate_insertion, "insertion")
+run_trials(mutate_insert, "insertion")
 run_trials(mutate_inversion, "inversion")
